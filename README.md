@@ -6,24 +6,36 @@
 
 ## Структура проекта
 
-- **src/** — исходные файлы проекта
-- **src/components/** — папка с компонентами приложения
-  - **src/components/base/** — базовые классы и утилиты
-  - **src/components/model/** — классы моделей данных
-  - **src/components/view/** — классы представления
-  - **src/components/presenter/** — презентер для связи данных и представления
-- **src/pages/** — HTML-файл главной страницы
-  - **index.html** — главная страница приложения
-- **src/types/** — файл с типами и интерфейсами
-  - **index.ts** — описание всех типов данных
-- **src/utils/** — утилиты и константы
-  - **utils.ts** — вспомогательные функции
-  - **constants.ts** — константы (API_URL, CDN_URL)
-  - **CardFactory.ts** — фабрика для создания карточек товаров
-  - **FormValidator.ts** — валидация форм
-- **src/index.ts** — точка входа приложения
-- **src/scss/** — стили приложения
-  - **styles.scss** — корневой файл стилей
+```
+src/
+├── components/
+│   ├── base/           # Базовые классы
+│   │   ├── Component.ts
+│   │   ├── EventEmitter.ts
+│   │   └── Api.ts
+│   ├── model/          # Модели данных
+│   │   ├── ProductCatalogModel.ts
+│   │   ├── BasketModel.ts
+│   │   └── OrderModel.ts
+│   ├── view/           # Представления
+│   │   ├── Page.ts
+│   │   ├── Modal.ts
+│   │   ├── CardView.ts
+│   │   └── *.ts
+│   └── presenter/      # Презентер
+│       └── AppPresenter.ts
+├── types/              # Типы TypeScript
+│   └── index.ts
+├── utils/              # Утилиты
+│   ├── constants.ts
+│   ├── CardFactory.ts
+│   └── FormValidator.ts
+├── scss/               # Стили
+│   └── styles.scss
+├── pages/              # HTML шаблоны
+│   └── index.html
+└── index.ts            # Точка входа
+```
 
 ## Установка и запуск
 
