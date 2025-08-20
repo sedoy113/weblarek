@@ -70,7 +70,7 @@ yarn build
 ### Карточка товара (`ICard`)
 
 ```typescript
-export interface ICard {
+interface ICard {
 	id: string;
 	title: string;
 	category: string;
@@ -93,7 +93,7 @@ export interface ICard {
 ### Корзина (`IBasket`)
 
 ```typescript
-export interface IBasket {
+interface IBasket {
 	items: ICard[];
 	total: number;
 }
@@ -106,7 +106,7 @@ export interface IBasket {
 ### Заказ (`IOrder`)
 
 ```typescript
-export interface IOrderForm {
+interface IOrderForm {
 	payment: 'card' | 'cash';
 	address: string;
 	email: string;
@@ -114,7 +114,7 @@ export interface IOrderForm {
 	total: number;
 }
 
-export interface IOrder extends IOrderForm {
+interface IOrder extends IOrderForm {
 	items: string[];
 }
 ```
@@ -130,7 +130,7 @@ export interface IOrder extends IOrderForm {
 ### Ошибки формы (`FormErrors`)
 
 ```typescript
-export type FormErrors = Partial<Record<keyof IOrder, string>>;
+type FormErrors = Partial<Record<keyof IOrder, string>>;
 ```
 
 - Хранит сообщения об ошибках валидации для полей формы заказа.
@@ -138,7 +138,7 @@ export type FormErrors = Partial<Record<keyof IOrder, string>>;
 ### Результат заказа (`IOrderResult`)
 
 ```typescript
-export interface IOrderResult {
+interface IOrderResult {
 	id: string;
 	total: number;
 }
@@ -151,7 +151,7 @@ export interface IOrderResult {
 ### Интерфейс модели данных карточек (`ICardsData`)
 
 ```typescript
-export interface ICardsData {
+interface ICardsData {
 	cards: ICard[];
 	getCard(cardId: string): ICard;
 }
