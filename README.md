@@ -186,7 +186,7 @@ interface ICardsData {
 - Взаимодействует с сервером через `Api`.
   - `getCards()`: Загружает каталог товаров.
   - `orderCards(order: IOrder)`: Отправляет заказ.
-- Используется в `AppPresenter` и `OrderModel`.
+- Используется в `AppPresenter`.
 
 #### Класс `EventEmitter`
 
