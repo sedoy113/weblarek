@@ -1,6 +1,5 @@
-import { IOrder, IApiError, FormErrors } from '../../types';
+import { IOrder, FormErrors } from '../../types';
 import { IEvents } from '../base/events';
-import { AppApi } from '../base/AppApi';
 
 // Определяем частичный заказ без полей items и total
 type PartialOrder = Omit<IOrder, 'items' | 'total'>;
@@ -16,8 +15,8 @@ export class OrderModel {
 
 	private errors: FormErrors = {}; // Объект для хранения ошибок валидации
 
-	// Конструктор принимает API для работы с заказами и шину событий
-	constructor(private api: AppApi, private events: IEvents) {}
+	// Конструктор принимает только шину событий
+	constructor(private events: IEvents) {}
 
 	/**
 	 * Устанавливает значение поля заказа
@@ -82,28 +81,6 @@ export class OrderModel {
 	}
 
 	/**
-	 * Отправляет заказ на сервер
-	 * @param items - массив идентификаторов товаров
-	 * @param total - общая сумма заказа
-	 */
-	async submitOrder(items: string[], total: number): Promise<void> {
-		try {
-			// Отправляем запрос на создание заказа
-			const response = await this.api.orderCards(this.getOrder(items, total));
-
-			// Отправляем событие об успешном создании заказа
-			this.events.emit('order:success', { total: response.total });
-
-			// Очищаем данные заказа
-			this.clear();
-		} catch (error) {
-			// Обрабатываем ошибку и отправляем соответствующее событие
-			const errorMessage = (error as IApiError).error || 'Неизвестная ошибка';
-			this.events.emit('order:error', { error: errorMessage });
-		}
-	}
-
-	/**
 	 * Очищает данные заказа и сбрасывает ошибки
 	 */
 	clear(): void {
@@ -133,5 +110,19 @@ export class OrderModel {
 			items, // Добавляем товары
 			total, // Добавляем общую сумму
 		};
+	}
+
+	/**
+	 * Геттер для получения текущих ошибок валидации
+	 */
+	getErrors(): FormErrors {
+		return this.errors;
+	}
+
+	/**
+	 * Геттер для получения текущего состояния заказа
+	 */
+	getOrderData(): PartialOrder {
+		return { ...this.order };
 	}
 }

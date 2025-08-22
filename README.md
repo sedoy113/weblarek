@@ -228,17 +228,22 @@ interface ICardsData {
 #### Класс `BasketModel`
 
 - Управляет товарами в корзине и их общей стоимостью.
+
   - `_items: ICard[]`: Товары в корзине.
   - `_total: number`: Сумма цен товаров.
-  - `cards: ICard[]`: Ссылка на каталог товаров.
   - `events: IEvents`: Брокер событий.
   - `addItem(id: string)`: Добавляет товар в корзину, устанавливает `inBasket: true`.
+  - `hasItem(id: string)`: Проверяет наличие товара в корзине.
+  - `getItemQuantity(id: string)`: Получает количество конкретного товара .
   - `removeItem(id: string)`: Удаляет товар из корзины, устанавливает `inBasket: false`.
   - `clear()`: Очищает корзину.
   - `updateTotal()`: Пересчитывает сумму.
   - `get items()`: Возвращает товары в корзине.
   - `get total()`: Возвращает сумму.
   - `get itemIds()`: Возвращает массив ID товаров.
+  - `get isEmpty()`: Проверяет, пуста ли корзина.
+  - `get itemCount()`: Для получения количества товаров.
+
 - Обновляет корзину через события `basket:changed`, синхронизирует `inBasket` с каталогом.
 
 #### Класс `OrderModel`
@@ -246,12 +251,10 @@ interface ICardsData {
 - Управляет данными заказа и их валидацией.
   - `order: IOrder`: Данные заказа.
   - `errors: FormErrors`: Ошибки валидации.
-  - `api: AppApi`: Клиент API.
   - `events: IEvents`: Брокер событий.
   - `setOrderField(field: keyof Omit<IOrder, 'items' | 'total'>, value: string)`: Устанавливает значение поля заказа.
   - `validateOrder()`: Проверяет поля оплаты и адреса.
   - `validateContacts()`: Проверяет email и телефон.
-  - `submitOrder(items: string[], total: number)`: Отправляет заказ на сервер.
   - `clear()`: Сбрасывает данные заказа.
   - `getOrder(items: string[], total: number)`: Возвращает данные заказа.
 - Отправляет события `order:valid`, `contacts:valid`, `order:success`, `order:error` для управления формами.
@@ -307,11 +310,10 @@ interface ICardsData {
 #### Класс `Basket`
 
 - Отображает корзину с товарами.
-  - `list`: Список товаров.
-  - `total`: Сумма заказа.
-  - `button`: Кнопка "Оформить".
-  - `render(data: Partial<IBasket>)`: Отображает товары и сумму, управляет кнопкой.
-- Генерирует событие `order:open`, использует `BasketItemView`.
+  - `list`: метод для установки готовой коллекции элементов списка
+  - `totalAmount`: Метод для установки общей суммы.
+  - `buttonDisabled`: Метод для установки состояния кнопки.
+  - `render(data: Partial<IBasket>)`: Метод для отрисовки корзины .
 
 #### Класс `BasketItemView`
 

@@ -7,10 +7,10 @@ import { IEvents } from '../base/events';
  */
 export class BasketModel {
 	// Приватные поля для хранения состояния
-	private _items: Map<string, ICard> = new Map(); // Используем Map для быстрого доступа
+	private _items: Set<string> = new Set(); // Храним только ID товаров
 	private _total = 0;
 	private _itemCount = 0;
-	private cards: Map<string, ICard>; // Используем Map вместо массива для быстрого поиска
+	private cards: Map<string, ICard>; // Используем Map для быстрого поиска
 
 	/**
 	 * Конструктор модели корзины
@@ -33,7 +33,7 @@ export class BasketModel {
 
 		// Обновляем статус товара
 		source.inBasket = true;
-		this._items.set(id, source);
+		this._items.add(id);
 		this._itemCount++;
 
 		this.updateTotal();
@@ -81,8 +81,11 @@ export class BasketModel {
 	 */
 	clear(): void {
 		// Сбрасываем статус всех товаров в корзине
-		this._items.forEach((item) => {
-			item.inBasket = false;
+		this._items.forEach((id) => {
+			const item = this.cards.get(id);
+			if (item) {
+				item.inBasket = false;
+			}
 		});
 
 		this._items.clear();
@@ -96,7 +99,7 @@ export class BasketModel {
 	 * Геттер для получения товаров в корзине
 	 */
 	get items(): ICard[] {
-		return Array.from(this._items.values());
+		return Array.from(this._items.values()).map((id) => this.cards.get(id)!);
 	}
 
 	/**
@@ -117,7 +120,7 @@ export class BasketModel {
 	 * Геттер для получения идентификаторов товаров
 	 */
 	get itemIds(): string[] {
-		return Array.from(this._items.keys());
+		return Array.from(this._items);
 	}
 
 	/**
@@ -131,10 +134,10 @@ export class BasketModel {
 	 * Приватный метод для пересчета общей стоимости
 	 */
 	private updateTotal(): void {
-		this._total = Array.from(this._items.values()).reduce(
-			(sum, item) => sum + (item.price ?? 0),
-			0
-		);
+		this._total = Array.from(this._items.values()).reduce((sum, id) => {
+			const item = this.cards.get(id);
+			return sum + (item?.price ?? 0);
+		}, 0);
 	}
 
 	/**

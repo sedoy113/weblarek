@@ -10,7 +10,8 @@ import { Basket } from '../view/BasketView';
 import { OrderForm } from '../view/OrderForm';
 import { ContactForm } from '../view/ContactForm';
 import { SuccessView } from '../view/SuccessView';
-import { IBasket, FormErrors } from '../../types';
+import { BasketItemView } from '../view/BasketItemView';
+import { IBasket, FormErrors, IApiError, ICard } from '../../types'; // Используем IProduct вместо IProductCard
 import { cloneTemplate, createElement } from '../../utils/utils';
 import { CDN_URL } from '../../utils/constants';
 import { createProductCard } from '../../utils/CardFactory';
@@ -42,7 +43,7 @@ export class AppPresenter {
 		this.success = new SuccessView(cloneTemplate('#success'), events);
 
 		// Инициализация модели заказа
-		this.orderModel = new OrderModel(api, events);
+		this.orderModel = new OrderModel(events);
 
 		// Настройка обработчиков событий
 		this.setupEventListeners();
@@ -71,6 +72,9 @@ export class AppPresenter {
 				this.events,
 				this.productCatalog.cards
 			);
+
+			// Эмитируем событие о загрузке данных
+			this.events.emit('initialData:loaded');
 		} catch (error) {
 			// Обработка ошибки загрузки
 			const errorMessage = (error as Error).message || 'Неизвестная ошибка';
@@ -98,6 +102,34 @@ export class AppPresenter {
 
 		// Обновление счетчика товаров в корзине
 		this.page.counter = this.basketModel?.items.length ?? 0;
+	}
+
+	/**
+	 * Создает элементы списка корзины из данных модели
+	 */
+	private createBasketItems(items: ICard[]): HTMLElement[] {
+		if (!items?.length) {
+			return [];
+		}
+
+		return items.map((item, index) => {
+			// Клонирование шаблона элемента корзины
+			const cardElement = cloneTemplate('#card-basket');
+
+			// Создание представления элемента корзины
+			const itemView = new BasketItemView(
+				cardElement,
+				this.events,
+				item.id,
+				index + 1 // Передача порядкового номера
+			);
+
+			// Отрисовка элемента корзины
+			itemView.render(item);
+
+			// Возвращаем контейнер элемента
+			return itemView.container;
+		});
 	}
 
 	/**
@@ -138,9 +170,20 @@ export class AppPresenter {
 
 		// Событие: изменение состояния корзины - обновляем отображение
 		this.events.on('basket:changed', (data: IBasket) => {
-			this.basket.render(data); // Перерисовываем корзину
-			this.page.counter = data.items.length; // Обновляем счетчик
-			this.renderCatalog(); // Обновляем каталог (меняем состояние кнопок)
+			// Создаем элементы списка корзины
+			const basketItems = this.createBasketItems(data.items);
+
+			// Устанавливаем готовые элементы в представление
+			this.basket.items = basketItems;
+
+			// Обновляем остальные данные корзины
+			this.basket.render(data);
+
+			// Обновляем счетчик товаров
+			this.page.counter = data.items.length;
+
+			// Обновляем каталог (меняем состояние кнопок)
+			this.renderCatalog();
 		});
 
 		// Событие: открытие корзины
@@ -149,7 +192,18 @@ export class AppPresenter {
 				items: this.basketModel.items,
 				total: this.basketModel.total,
 			};
-			this.modal.open(this.basket.render(basketData));
+
+			// Создаем элементы списка корзины
+			const basketItems = this.createBasketItems(basketData.items);
+
+			// Устанавливаем готовые элементы
+			this.basket.items = basketItems;
+
+			// Обновляем остальные данные
+			this.basket.render(basketData);
+
+			// Открываем модальное окно с корзиной
+			this.modal.open(this.basket.getContainer());
 		});
 
 		// Событие: открытие формы заказа
@@ -258,18 +312,35 @@ export class AppPresenter {
 			}
 		);
 
-		// Событие: отправка формы контактов - финальное оформление заказа
-		this.events.on('contacts:submit', () => {
-			this.orderModel.submitOrder(
-				this.basketModel.itemIds,
-				this.basketModel.total
-			);
-		});
-
 		// Событие: успешное оформление заказа
 		this.events.on('order:success', (data: { total: number }) => {
 			this.basketModel.clear(); // Очищаем корзину
 			this.modal.open(this.success.render({ total: data.total })); // Показываем успех
+		});
+
+		// Событие: отправка формы контактов - финальное оформление заказа
+		this.events.on('contacts:submit', async () => {
+			try {
+				// Формируем объект заказа из данных моделей
+				const order = this.orderModel.getOrder(
+					this.basketModel.itemIds,
+					this.basketModel.total
+				);
+
+				// Отправляем заказ на сервер через API
+				const response = await this.api.orderCards(order);
+
+				// Отправляем событие об успешном создании заказа
+				this.events.emit('order:success', { total: response.total });
+
+				// Очищаем корзину и данные заказа
+				this.basketModel.clear();
+				this.orderModel.clear();
+			} catch (error) {
+				// Обрабатываем ошибку и отправляем соответствующее событие
+				const errorMessage = (error as IApiError).error || 'Неизвестная ошибка';
+				this.events.emit('order:error', { error: errorMessage });
+			}
 		});
 
 		// Событие: закрытие окна успешного заказа
