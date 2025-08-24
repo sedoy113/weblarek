@@ -1,7 +1,7 @@
 // Импорт базового класса CardView для наследования функциональности
 import { CardView } from './CardView';
 // Импорт интерфейса событий для работы с системой событий
-import { IEvents } from '../base/eventst';
+import { IEvents } from '../base/Events';
 
 // Класс BasketItemView представляет элемент корзины, наследуется от CardView
 export class BasketItemView extends CardView {

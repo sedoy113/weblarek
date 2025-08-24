@@ -1,7 +1,7 @@
 // Импорт необходимых модулей и типов
 import { Form } from './FormView'; // Базовый класс формы
 import { IOrderForm } from '../../types'; // Интерфейс данных формы заказа
-import { IEvents } from '../base/eventst'; // Интерфейс системы событий
+import { IEvents } from '../base/Events'; // Интерфейс системы событий
 import { ensureElement } from '../../utils/utils'; // Утилита для гарантированного получения элемента
 
 // Класс формы контактов, наследуется от базовой формы

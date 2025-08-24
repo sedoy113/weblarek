@@ -2,12 +2,12 @@
 import './scss/styles.scss';
 
 // Импорт основных классов и модулей приложения
-import { EventEmitter } from './components/base/eventst';
+import { EventEmitter } from './components/base/Events';
 import { AppApi } from './components/base/AppApi';
 import { ProductCatalogModel } from './components/model/ProductCatalogModel';
 import { AppPresenter } from './components/presenter/AppPresenter';
 import { API_URL, settings } from './utils/constants';
-import { Api } from './components/base/apit';
+import { Api } from './components/base/Api';
 
 // Создание экземпляра EventEmitter для управления событиями приложения
 // EventEmitter служит центральной шиной событий для коммуникации между компонентами

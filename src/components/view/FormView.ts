@@ -1,6 +1,6 @@
 // Импорт базового компонента и интерфейса событий
 import { Component } from '../base/Component';
-import { IEvents } from '../base/eventst';
+import { IEvents } from '../base/Events';
 import { ensureElement } from '../../utils/utils';
 
 // Интерфейс для состояния формы

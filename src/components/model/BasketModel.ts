@@ -1,5 +1,5 @@
 import { ICard } from '../../types';
-import { IEvents } from '../base/eventst';
+import { IEvents } from '../base/Events';
 
 /**
  * Модель корзины для управления товарами

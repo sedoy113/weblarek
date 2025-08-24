@@ -1,7 +1,7 @@
 // Импорт типов, базовых классов и вспомогательных функций
 import { IBasket } from '../../types';
 import { Component } from '../base/Component';
-import { IEvents } from '../base/eventst';
+import { IEvents } from '../base/Events';
 import { ensureElement } from '../../utils/utils';
 
 // Класс Basket, представляющий компонент корзины покупок
