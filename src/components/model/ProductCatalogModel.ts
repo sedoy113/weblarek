@@ -1,6 +1,6 @@
 // Импорт типов карточки и данных каталога, а также интерфейса событий
 import { ICard, ICardsData } from '../../types';
-import { IEvents } from '../base/events';
+import { IEvents } from '../base/eventst';
 
 // Класс модели каталога продуктов, реализующий интерфейс ICardsData
 export class ProductCatalogModel implements ICardsData {

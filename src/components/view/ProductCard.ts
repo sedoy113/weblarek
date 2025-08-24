@@ -1,6 +1,6 @@
 import { CardView } from './CardView';
 import { ICard } from '../../types';
-import { IEvents } from '../base/events';
+import { IEvents } from '../base/eventst';
 /**
  * Компонент карточки товара, расширяющий базовый класс CardView.
  * Отвечает за отображение информации о товаре и взаимодействие с ним.

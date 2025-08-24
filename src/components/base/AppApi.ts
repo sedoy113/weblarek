@@ -1,5 +1,5 @@
 import { IApi, ICard, IOrder, IOrderResult } from '../../types';
-import { ApiListResponse } from './api';
+import { ApiListResponse } from './apit';
 
 /**
  * Класс для взаимодействия с API приложения.

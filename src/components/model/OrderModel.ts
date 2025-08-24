@@ -1,5 +1,5 @@
 import { IOrder, FormErrors } from '../../types';
-import { IEvents } from '../base/events';
+import { IEvents } from '../base/eventst';
 
 // Определяем частичный заказ без полей items и total
 type PartialOrder = Omit<IOrder, 'items' | 'total'>;

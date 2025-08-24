@@ -1,6 +1,6 @@
 import { cloneTemplate } from './utils';
 import { ICard } from '../types';
-import { IEvents } from '../components/base/events';
+import { IEvents } from '../components/base/eventst';
 import { ProductCard } from '../components/view/ProductCard';
 
 /**

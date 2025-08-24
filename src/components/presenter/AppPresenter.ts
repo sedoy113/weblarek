@@ -1,4 +1,4 @@
-import { IEvents } from '../base/events';
+import { IEvents } from '../base/eventst';
 import { AppApi } from '../base/AppApi';
 import { ProductCatalogModel } from '../model/ProductCatalogModel';
 import { BasketModel } from '../model/BasketModel';
