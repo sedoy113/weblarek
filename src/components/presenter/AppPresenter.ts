@@ -11,7 +11,7 @@ import { OrderForm } from '../view/OrderForm';
 import { ContactForm } from '../view/ContactForm';
 import { SuccessView } from '../view/SuccessView';
 import { BasketItemView } from '../view/BasketItemView';
-import { IBasket, FormErrors, IApiError, ICard } from '../../types'; // Используем IProduct вместо IProductCard
+import { IBasket, FormErrors, IApiError, ICard, IOrder } from '../../types'; // Используем IProduct вместо IProductCard
 import { cloneTemplate, createElement } from '../../utils/utils';
 import { CDN_URL } from '../../utils/constants';
 import { createProductCard } from '../../utils/CardFactory';
@@ -210,10 +210,7 @@ export class AppPresenter {
 		this.events.on('order:open', () => {
 			this.orderModel.clear(); // Очищаем предыдущие данные заказа
 
-			const order = this.orderModel.getOrder(
-				this.basketModel.itemIds,
-				this.basketModel.total
-			);
+			const order = this.orderModel.getOrder();
 
 			this.orderModel.validateOrder(); // Валидация начальных данных
 
@@ -258,16 +255,13 @@ export class AppPresenter {
 
 		// Событие: отправка формы заказа - переход к форме контактов
 		this.events.on('order:submit', () => {
-			const order = this.orderModel.getOrder(
-				this.basketModel.itemIds,
-				this.basketModel.total
-			);
 			this.orderModel.validateContacts(); // Валидация контактов
 
-			// Открываем форму контактов
+			// Открываем форму контактов с текущими данными из модели заказа
+			const orderData = this.orderModel.getOrder();
 			this.modal.open(
 				this.contactForm.render({
-					...order,
+					...orderData,
 					valid: false,
 					errors: '',
 				})
@@ -321,14 +315,18 @@ export class AppPresenter {
 		// Событие: отправка формы контактов - финальное оформление заказа
 		this.events.on('contacts:submit', async () => {
 			try {
-				// Формируем объект заказа из данных моделей
-				const order = this.orderModel.getOrder(
-					this.basketModel.itemIds,
-					this.basketModel.total
-				);
+				// Получаем данные заказа из модели
+				const orderData = this.orderModel.getOrder();
+
+				// Формируем полный объект заказа, добавляя данные из корзины
+				const fullOrder: IOrder = {
+					...orderData,
+					items: this.basketModel.itemIds,
+					total: this.basketModel.total,
+				};
 
 				// Отправляем заказ на сервер через API
-				const response = await this.api.orderCards(order);
+				const response = await this.api.orderCards(fullOrder);
 
 				// Отправляем событие об успешном создании заказа
 				this.events.emit('order:success', { total: response.total });

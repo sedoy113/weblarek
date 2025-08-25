@@ -3,6 +3,7 @@ import { IEvents } from '../base/Events';
 
 // Определяем частичный заказ без полей items и total
 type PartialOrder = Omit<IOrder, 'items' | 'total'>;
+export type OrderData = Omit<IOrder, 'items' | 'total'>;
 
 export class OrderModel {
 	// Объект заказа с основными полями
@@ -104,12 +105,15 @@ export class OrderModel {
 	 * @param total - общая сумма заказа
 	 * @returns Полный объект заказа
 	 */
-	getOrder(items: string[], total: number): IOrder {
-		return {
-			...this.order, // Основные данные заказа
-			items, // Добавляем товары
-			total, // Добавляем общую сумму
-		};
+	// getOrder(items: string[], total: number): IOrder {
+	// 	return {
+	// 		...this.order, // Основные данные заказа
+	// 		items, // Добавляем товары
+	// 		total, // Добавляем общую сумму
+	// 	};
+	// }
+	getOrder(): OrderData {
+		return { ...this.order };
 	}
 
 	/**
