@@ -105,6 +105,33 @@ export class AppPresenter {
 	}
 
 	/**
+	 * Обновляет состояние кнопки конкретной карточки товара
+	 */
+	private updateCardButton(id: string): void {
+		// const cardData = this.productCatalog.getCard(id);
+		// if (!cardData) return;
+
+		// Находим элемент карточки в DOM
+		const cardElement = document.querySelector(`[data-id="${id}"]`);
+		if (!cardElement) return;
+
+		// Находим кнопку внутри карточки
+		const button = cardElement.querySelector('.card__button');
+		if (!button) return;
+
+		// Обновляем текст и состояние кнопки
+		const inBasket = this.basketModel.hasItem(id);
+		button.textContent = inBasket ? 'Убрать из корзины' : 'В корзину';
+
+		// Добавляем/убираем класс для стилизации
+		if (inBasket) {
+			button.classList.add('card__button_added');
+		} else {
+			button.classList.remove('card__button_added');
+		}
+	}
+
+	/**
 	 * Создает элементы списка корзины из данных модели
 	 */
 	private createBasketItems(items: ICard[]): HTMLElement[] {
@@ -182,8 +209,10 @@ export class AppPresenter {
 			// Обновляем счетчик товаров
 			this.page.counter = data.items.length;
 
-			// Обновляем каталог (меняем состояние кнопок)
-			this.renderCatalog();
+			// Обновляем состояние кнопок только для измененных товаров
+			data.items.forEach((item) => this.updateCardButton(item.id));
+			// Также обновляем кнопки товаров, которые были удалены из корзины
+			// (это требует отслеживания предыдущего состояния, что сложнее)
 		});
 
 		// Событие: открытие корзины
