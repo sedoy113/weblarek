@@ -99,19 +99,6 @@ export class OrderModel {
 		this.events.emit('contacts:valid', { isValid: false, errors: {} });
 	}
 
-	/**
-	 * Формирует полный объект заказа для отправки на сервер
-	 * @param items - массив идентификаторов товаров
-	 * @param total - общая сумма заказа
-	 * @returns Полный объект заказа
-	 */
-	// getOrder(items: string[], total: number): IOrder {
-	// 	return {
-	// 		...this.order, // Основные данные заказа
-	// 		items, // Добавляем товары
-	// 		total, // Добавляем общую сумму
-	// 	};
-	// }
 	getOrder(): OrderData {
 		return { ...this.order };
 	}
