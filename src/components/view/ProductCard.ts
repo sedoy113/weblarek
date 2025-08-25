@@ -52,7 +52,7 @@ export class ProductCard extends CardView {
 
 				if (this._inBasket) {
 					// Удаление из карточки товара - закрываем модальное окно
-					this.events.emit('card:remove', { id: this.id });
+					this.events.emit('basket:remove', { id: this.id });
 				} else {
 					// Добавление в корзину - не закрываем модальное окно
 					this.events.emit('basket:add', { id: this.id });

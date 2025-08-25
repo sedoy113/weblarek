@@ -74,7 +74,7 @@ export class AppPresenter {
 			);
 
 			// Эмитируем событие о загрузке данных
-			this.events.emit('initialData:loaded');
+			// this.events.emit('initialData:loaded');
 		} catch (error) {
 			// Обработка ошибки загрузки
 			const errorMessage = (error as Error).message || 'Неизвестная ошибка';
@@ -187,11 +187,6 @@ export class AppPresenter {
 		// Событие: удаление товара из корзины
 		this.events.on('basket:remove', ({ id }: { id: string }) => {
 			this.basketModel.removeItem(id);
-		});
-
-		// Событие: удаление товара из карточки (альтернативный обработчик)
-		this.events.on('card:remove', ({ id }: { id: string }) => {
-			this.basketModel.removeItem(id);
 			this.modal.close();
 		});
 
@@ -211,6 +206,10 @@ export class AppPresenter {
 
 			// Обновляем состояние кнопок только для измененных товаров
 			data.items.forEach((item) => this.updateCardButton(item.id));
+
+			if (data.items.length === 0 && this.modal.close) {
+				this.modal.close();
+			}
 			// Также обновляем кнопки товаров, которые были удалены из корзины
 			// (это требует отслеживания предыдущего состояния, что сложнее)
 		});
