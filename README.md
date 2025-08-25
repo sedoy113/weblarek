@@ -108,6 +108,9 @@ interface ICard {
 interface IBasket {
 	items: ICard[];
 	total: number;
+	itemIds: string[];
+	itemCount: number;
+	isEmpty: boolean;
 }
 ```
 

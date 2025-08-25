@@ -1,3 +1,4 @@
+// AppPresenter.ts
 import { IEvents } from '../base/Events';
 import { AppApi } from '../base/AppApi';
 import { ProductCatalogModel } from '../model/ProductCatalogModel';
@@ -11,28 +12,28 @@ import { OrderForm } from '../view/OrderForm';
 import { ContactForm } from '../view/ContactForm';
 import { SuccessView } from '../view/SuccessView';
 import { BasketItemView } from '../view/BasketItemView';
-import { IBasket, FormErrors, IApiError, ICard, IOrder } from '../../types'; // Используем IProduct вместо IProductCard
+import { IBasket, FormErrors, IApiError, ICard, IOrder } from '../../types';
 import { cloneTemplate, createElement } from '../../utils/utils';
 import { CDN_URL } from '../../utils/constants';
 import { createProductCard } from '../../utils/CardFactory';
 
 export class AppPresenter {
 	// Компоненты представления (View)
-	private page: Page; // Главная страница
-	private modal: Modal; // Модальное окно
-	private basket: Basket; // Корзина
-	private orderForm: OrderForm; // Форма заказа (адрес и оплата)
-	private contactForm: ContactForm; // Форма контактов (email и телефон)
-	private success: SuccessView; // Сообщение об успешном заказе
+	private page: Page;
+	private modal: Modal;
+	private basket: Basket;
+	private orderForm: OrderForm;
+	private contactForm: ContactForm;
+	private success: SuccessView;
 
 	// Модели данных (Model)
-	private basketModel: BasketModel; // Модель корзины
-	private orderModel: OrderModel; // Модель заказа
+	private basketModel: BasketModel;
+	private orderModel: OrderModel;
 
 	constructor(
-		private api: AppApi, // API для работы с сервером
-		private productCatalog: ProductCatalogModel, // Модель каталога товаров
-		private events: IEvents // Система событий для коммуникации между компонентами
+		private api: AppApi,
+		private productCatalog: ProductCatalogModel,
+		private events: IEvents
 	) {
 		// Инициализация компонентов представления
 		this.page = new Page(document.body, events);
@@ -42,8 +43,9 @@ export class AppPresenter {
 		this.contactForm = new ContactForm(cloneTemplate('#contacts'), events);
 		this.success = new SuccessView(cloneTemplate('#success'), events);
 
-		// Инициализация модели заказа
+		// Инициализация моделей
 		this.orderModel = new OrderModel(events);
+		this.basketModel = new BasketModel(events);
 
 		// Настройка обработчиков событий
 		this.setupEventListeners();
@@ -57,26 +59,15 @@ export class AppPresenter {
 	 */
 	private async fetchCards(): Promise<void> {
 		try {
-			// Получение данных с сервера
 			const cards = await this.api.getCards();
 
-			// Обработка данных: добавление полного URL изображения и флага наличия в корзине
+			// Обновляем каталог с учетом текущего состояния корзины
 			this.productCatalog.cards = cards.map((card) => ({
 				...card,
 				image: `${CDN_URL}${card.image}`,
-				inBasket: false,
+				inBasket: this.basketModel.hasItem(card.id),
 			}));
-
-			// Инициализация модели корзины после загрузки товаров
-			this.basketModel = new BasketModel(
-				this.events,
-				this.productCatalog.cards
-			);
-
-			// Эмитируем событие о загрузке данных
-			// this.events.emit('initialData:loaded');
 		} catch (error) {
-			// Обработка ошибки загрузки
 			const errorMessage = (error as Error).message || 'Неизвестная ошибка';
 			this.modal.open(
 				createElement('div', {
@@ -87,43 +78,40 @@ export class AppPresenter {
 	}
 
 	/**
+	 * Создает Map для быстрого доступа к данным карточек
+	 */
+	private getCardsMap(): Map<string, ICard> {
+		return new Map(this.productCatalog.cards.map((card) => [card.id, card]));
+	}
+
+	/**
 	 * Отрисовка каталога товаров на странице
 	 */
 	private renderCatalog(): void {
-		// Создание карточек товаров
 		const cardsArray = this.productCatalog.cards.map((card) =>
 			createProductCard(card, this.events, '#card-catalog')
 		);
 
-		// Установка карточек в галерею или сообщение об отсутствии товаров
 		this.page.gallery = cardsArray.length
 			? cardsArray
 			: [createElement('div', { textContent: 'Товары не найдены' })];
 
-		// Обновление счетчика товаров в корзине
-		this.page.counter = this.basketModel?.items.length ?? 0;
+		this.page.counter = this.basketModel.itemCount;
 	}
 
 	/**
 	 * Обновляет состояние кнопки конкретной карточки товара
 	 */
 	private updateCardButton(id: string): void {
-		// const cardData = this.productCatalog.getCard(id);
-		// if (!cardData) return;
-
-		// Находим элемент карточки в DOM
 		const cardElement = document.querySelector(`[data-id="${id}"]`);
 		if (!cardElement) return;
 
-		// Находим кнопку внутри карточки
 		const button = cardElement.querySelector('.card__button');
 		if (!button) return;
 
-		// Обновляем текст и состояние кнопки
 		const inBasket = this.basketModel.hasItem(id);
 		button.textContent = inBasket ? 'Убрать из корзины' : 'В корзину';
 
-		// Добавляем/убираем класс для стилизации
 		if (inBasket) {
 			button.classList.add('card__button_added');
 		} else {
@@ -134,29 +122,33 @@ export class AppPresenter {
 	/**
 	 * Создает элементы списка корзины из данных модели
 	 */
-	private createBasketItems(items: ICard[]): HTMLElement[] {
-		if (!items?.length) {
+	private createBasketItems(itemIds: string[]): HTMLElement[] {
+		if (!itemIds?.length) {
 			return [];
 		}
 
-		return items.map((item, index) => {
-			// Клонирование шаблона элемента корзины
-			const cardElement = cloneTemplate('#card-basket');
+		return itemIds
+			.map((id, index) => {
+				const cardData = this.productCatalog.getCard(id);
+				if (!cardData) return null;
 
-			// Создание представления элемента корзины
-			const itemView = new BasketItemView(
-				cardElement,
-				this.events,
-				item.id,
-				index + 1 // Передача порядкового номера
-			);
+				const cardElement = cloneTemplate('#card-basket');
+				const itemView = new BasketItemView(
+					cardElement,
+					this.events,
+					id,
+					index + 1
+				);
+				itemView.render(cardData);
+				return itemView.container;
+			})
+			.filter((item): item is HTMLElement => item !== null);
+	}
 
-			// Отрисовка элемента корзины
-			itemView.render(item);
-
-			// Возвращаем контейнер элемента
-			return itemView.container;
-		});
+	private getBasketItemsData(itemIds: string[]): ICard[] {
+		return itemIds
+			.map((id) => this.productCatalog.getCard(id))
+			.filter((card): card is ICard => card !== null);
 	}
 
 	/**
@@ -181,7 +173,7 @@ export class AppPresenter {
 		// Событие: добавление товара в корзину
 		this.events.on('basket:add', ({ id }: { id: string }) => {
 			this.basketModel.addItem(id);
-			this.modal.close(); // Закрываем модальное окно после добавления
+			this.modal.close();
 		});
 
 		// Событие: удаление товара из корзины
@@ -192,56 +184,68 @@ export class AppPresenter {
 
 		// Событие: изменение состояния корзины - обновляем отображение
 		this.events.on('basket:changed', (data: IBasket) => {
-			// Создаем элементы списка корзины
-			const basketItems = this.createBasketItems(data.items);
+			// Обновляем общую стоимость с актуальными данными о ценах
+			this.basketModel.updateTotal(this.getCardsMap());
 
-			// Устанавливаем готовые элементы в представление
-			this.basket.items = basketItems;
+			// Обновляем статус inBasket для всех карточек в каталоге
+			this.productCatalog.cards = this.productCatalog.cards.map((card) => ({
+				...card,
+				inBasket: this.basketModel.hasItem(card.id),
+			}));
 
-			// Обновляем остальные данные корзины
-			this.basket.render(data);
+			// Создаем элементы корзины и получаем данные
+			const basketElements = this.createBasketItems(data.itemIds);
+			const basketItemsData = this.getBasketItemsData(data.itemIds);
+
+			// Обновляем представление корзины
+			this.basket.items = basketElements;
+			this.basket.render({
+				items: basketItemsData, // Передаем данные карточек
+				total: data.total,
+			});
 
 			// Обновляем счетчик товаров
-			this.page.counter = data.items.length;
+			this.page.counter = data.itemCount;
 
-			// Обновляем состояние кнопок только для измененных товаров
-			data.items.forEach((item) => this.updateCardButton(item.id));
+			// Обновляем состояние кнопок всех карточек
+			this.productCatalog.cards.forEach((card) =>
+				this.updateCardButton(card.id)
+			);
 
-			if (data.items.length === 0 && this.modal.close) {
+			if (data.isEmpty && this.modal.close) {
 				this.modal.close();
 			}
-			// Также обновляем кнопки товаров, которые были удалены из корзины
-			// (это требует отслеживания предыдущего состояния, что сложнее)
 		});
 
 		// Событие: открытие корзины
 		this.events.on('basket:open', () => {
-			const basketData: IBasket = {
-				items: this.basketModel.items,
+			// Обновляем общую стоимость перед открытием
+			this.basketModel.updateTotal(this.getCardsMap());
+
+			const basketElements = this.createBasketItems(this.basketModel.itemIds);
+			const basketItemsData = this.getBasketItemsData(this.basketModel.itemIds);
+
+			const basketData = {
+				items: basketItemsData, // Данные карточек
 				total: this.basketModel.total,
 			};
 
-			// Обновляем остальные данные
+			this.basket.items = basketElements; // Элементы DOM
 			this.basket.render(basketData);
-
-			// Открываем модальное окно с корзиной
 			this.modal.open(this.basket.getContainer());
 		});
 
 		// Событие: открытие формы заказа
 		this.events.on('order:open', () => {
-			this.orderModel.clear(); // Очищаем предыдущие данные заказа
-
+			this.orderModel.clear();
 			const order = this.orderModel.getOrder();
+			this.orderModel.validateOrder();
 
-			this.orderModel.validateOrder(); // Валидация начальных данных
-
-			// Открываем форму с начальными данными
 			this.modal.open(
 				this.orderForm.render({
 					...order,
-					valid: false, // Форма изначально не валидна
-					errors: '', // Ошибок пока нет
+					valid: false,
+					errors: '',
 				})
 			);
 		});
@@ -249,22 +253,20 @@ export class AppPresenter {
 		// Событие: выбор способа оплаты
 		this.events.on('order:payment', (data: { payment: 'card' | 'cash' }) => {
 			this.orderModel.setOrderField('payment', data.payment);
-			this.orderForm.payment = data.payment; // Обновляем отображение
+			this.orderForm.payment = data.payment;
 		});
 
 		// Событие: ввод адреса
 		this.events.on('order:address', (data: { address: string }) => {
 			this.orderModel.setOrderField('address', data.address);
-			this.orderForm.address = data.address; // Обновляем отображение
+			this.orderForm.address = data.address;
 		});
 
 		// Событие: валидация данных заказа
 		this.events.on(
 			'order:valid',
 			(data: { isValid: boolean; errors: FormErrors }) => {
-				this.orderForm.valid = data.isValid; // Обновляем состояние кнопки
-
-				// Формируем сообщение об ошибках
+				this.orderForm.valid = data.isValid;
 				const errorMessage = data.errors.address || data.errors.payment || '';
 				this.orderForm.errors = errorMessage;
 			}
@@ -277,10 +279,9 @@ export class AppPresenter {
 
 		// Событие: отправка формы заказа - переход к форме контактов
 		this.events.on('order:submit', () => {
-			this.orderModel.validateContacts(); // Валидация контактов
-
-			// Открываем форму контактов с текущими данными из модели заказа
+			this.orderModel.validateContacts();
 			const orderData = this.orderModel.getOrder();
+
 			this.modal.open(
 				this.contactForm.render({
 					...orderData,
@@ -293,25 +294,22 @@ export class AppPresenter {
 		// Событие: ввод email
 		this.events.on('contacts:email', (data: { email: string }) => {
 			this.orderModel.setOrderField('email', data.email);
-			this.contactForm.email = data.email; // Обновляем отображение
+			this.contactForm.email = data.email;
 		});
 
 		// Событие: ввод телефона
 		this.events.on('contacts:phone', (data: { phone: string }) => {
 			this.orderModel.setOrderField('phone', data.phone);
-			this.contactForm.phone = data.phone; // Обновляем отображение
+			this.contactForm.phone = data.phone;
 		});
 
 		// Событие: валидация данных контактов
 		this.events.on(
 			'contacts:valid',
 			(data: { isValid: boolean; errors: FormErrors }) => {
-				this.contactForm.valid = data.isValid; // Обновляем состояние кнопки
-
-				// Формируем составное сообщение об ошибках
+				this.contactForm.valid = data.isValid;
 				const emailError = data.errors.email || '';
 				const phoneError = data.errors.phone || '';
-
 				let errorMessage = '';
 
 				if (emailError && phoneError) {
@@ -320,8 +318,6 @@ export class AppPresenter {
 					errorMessage = emailError;
 				} else if (phoneError) {
 					errorMessage = phoneError;
-				} else {
-					errorMessage = '';
 				}
 
 				this.contactForm.errors = errorMessage;
@@ -330,34 +326,30 @@ export class AppPresenter {
 
 		// Событие: успешное оформление заказа
 		this.events.on('order:success', (data: { total: number }) => {
-			this.basketModel.clear(); // Очищаем корзину
-			this.modal.open(this.success.render({ total: data.total })); // Показываем успех
+			this.basketModel.clear();
+			this.modal.open(this.success.render({ total: data.total }));
 		});
 
 		// Событие: отправка формы контактов - финальное оформление заказа
 		this.events.on('contacts:submit', async () => {
 			try {
-				// Получаем данные заказа из модели
 				const orderData = this.orderModel.getOrder();
 
-				// Формируем полный объект заказа, добавляя данные из корзины
+				// Обновляем общую стоимость перед отправкой
+				this.basketModel.updateTotal(this.getCardsMap());
+
 				const fullOrder: IOrder = {
 					...orderData,
 					items: this.basketModel.itemIds,
 					total: this.basketModel.total,
 				};
 
-				// Отправляем заказ на сервер через API
 				const response = await this.api.orderCards(fullOrder);
-
-				// Отправляем событие об успешном создании заказа
 				this.events.emit('order:success', { total: response.total });
 
-				// Очищаем корзину и данные заказа
 				this.basketModel.clear();
 				this.orderModel.clear();
 			} catch (error) {
-				// Обрабатываем ошибку и отправляем соответствующее событие
 				const errorMessage = (error as IApiError).error || 'Неизвестная ошибка';
 				this.events.emit('order:error', { error: errorMessage });
 			}
@@ -368,7 +360,7 @@ export class AppPresenter {
 			this.modal.close();
 		});
 
-		// Событие: блокировка/разблокировка страницы (при открытии модальных окон)
+		// Событие: блокировка/разблокировка страницы
 		this.events.on('page:locked', (data: { locked: boolean }) => {
 			this.page.locked = data.locked;
 		});

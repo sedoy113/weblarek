@@ -23,6 +23,9 @@ export interface ICard {
 export interface IBasket {
 	items: ICard[];
 	total: number;
+	itemIds: string[];
+	itemCount: number;
+	isEmpty: boolean;
 }
 
 export interface ICardsData {

@@ -1,42 +1,32 @@
-import { ICard } from '../../types';
 import { IEvents } from '../base/Events';
 
 /**
  * Модель корзины для управления товарами
- * Отвечает за хранение состояния корзины и бизнес-логику работы с ней
+ * Хранит только ID товаров, данные о товарах берутся из каталога
  */
 export class BasketModel {
 	// Приватные поля для хранения состояния
 	private _items: Set<string> = new Set(); // Храним только ID товаров
 	private _total = 0;
 	private _itemCount = 0;
-	private cards: Map<string, ICard>; // Используем Map для быстрого поиска
 
 	/**
 	 * Конструктор модели корзины
 	 * @param events - система событий для уведомления об изменениях
-	 * @param cards - массив всех доступных товаров
 	 */
-	constructor(private events: IEvents, cards: ICard[]) {
-		// Преобразуем массив в Map для оптимизации поиска
-		this.cards = new Map(cards.map((card) => [card.id, card]));
-	}
+	constructor(private events: IEvents) {}
 
 	/**
 	 * Добавляет товар в корзину
 	 * @param id - идентификатор добавляемого товара
-	 * @returns true если товар добавлен, false если не найден
+	 * @returns true если товар добавлен, false если уже есть в корзине
 	 */
 	addItem(id: string): boolean {
-		const source = this.cards.get(id);
-		if (!source || source.inBasket) return false;
+		if (this._items.has(id)) return false;
 
-		// Обновляем статус товара
-		source.inBasket = true;
 		this._items.add(id);
 		this._itemCount++;
 
-		this.updateTotal();
 		this.emitChange();
 		return true;
 	}
@@ -47,15 +37,11 @@ export class BasketModel {
 	 * @returns true если товар удален, false если не найден
 	 */
 	removeItem(id: string): boolean {
-		const source = this.cards.get(id);
-		if (!source || !this._items.has(id)) return false;
+		if (!this._items.has(id)) return false;
 
-		// Обновляем статус товара
-		source.inBasket = false;
 		this._items.delete(id);
 		this._itemCount--;
 
-		this.updateTotal();
 		this.emitChange();
 		return true;
 	}
@@ -80,14 +66,6 @@ export class BasketModel {
 	 * Очищает корзину полностью
 	 */
 	clear(): void {
-		// Сбрасываем статус всех товаров в корзине
-		this._items.forEach((id) => {
-			const item = this.cards.get(id);
-			if (item) {
-				item.inBasket = false;
-			}
-		});
-
 		this._items.clear();
 		this._total = 0;
 		this._itemCount = 0;
@@ -96,10 +74,21 @@ export class BasketModel {
 	}
 
 	/**
-	 * Геттер для получения товаров в корзине
+	 * Обновляет общую стоимость на основе данных о товарах
+	 * @param cards - Map с данными о товарах (id -> цена)
 	 */
-	get items(): ICard[] {
-		return Array.from(this._items.values()).map((id) => this.cards.get(id)!);
+	updateTotal(cards: Map<string, { price: number }>): void {
+		this._total = Array.from(this._items.values()).reduce((sum, id) => {
+			const item = cards.get(id);
+			return sum + (item?.price ?? 0);
+		}, 0);
+	}
+
+	/**
+	 * Геттер для получения идентификаторов товаров
+	 */
+	get itemIds(): string[] {
+		return Array.from(this._items);
 	}
 
 	/**
@@ -117,13 +106,6 @@ export class BasketModel {
 	}
 
 	/**
-	 * Геттер для получения идентификаторов товаров
-	 */
-	get itemIds(): string[] {
-		return Array.from(this._items);
-	}
-
-	/**
 	 * Проверяет, пуста ли корзина
 	 */
 	get isEmpty(): boolean {
@@ -131,21 +113,11 @@ export class BasketModel {
 	}
 
 	/**
-	 * Приватный метод для пересчета общей стоимости
-	 */
-	private updateTotal(): void {
-		this._total = Array.from(this._items.values()).reduce((sum, id) => {
-			const item = this.cards.get(id);
-			return sum + (item?.price ?? 0);
-		}, 0);
-	}
-
-	/**
 	 * Приватный метод для отправки события изменения
 	 */
 	private emitChange(): void {
 		this.events.emit('basket:changed', {
-			items: this.items,
+			itemIds: this.itemIds,
 			total: this._total,
 			itemCount: this._itemCount,
 			isEmpty: this.isEmpty,
@@ -170,7 +142,6 @@ export class BasketModel {
 	 */
 	restore(state: BasketState): void {
 		this.clear();
-
 		state.itemIds.forEach((id) => {
 			this.addItem(id);
 		});
