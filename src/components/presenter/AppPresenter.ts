@@ -193,12 +193,6 @@ export class AppPresenter {
 				total: this.basketModel.total,
 			};
 
-			// Создаем элементы списка корзины
-			const basketItems = this.createBasketItems(basketData.items);
-
-			// Устанавливаем готовые элементы
-			this.basket.items = basketItems;
-
 			// Обновляем остальные данные
 			this.basket.render(basketData);
 
