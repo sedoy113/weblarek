@@ -41,18 +41,22 @@ export class ProductCard extends CardView {
 		});
 
 		// Обработчик клика по кнопке
+		/**
+		 * Событие добавления/удаления товара из корзины
+		 * @event basket:add|card:remove
+		 * @property {string} id - Идентификатор товара
+		 */
 		if (this._button) {
 			this._button.addEventListener('click', (evt) => {
 				evt.stopPropagation();
 
-				/**
-				 * Событие добавления/удаления товара из корзины
-				 * @event basket:add|card:remove
-				 * @property {string} id - Идентификатор товара
-				 */
-				this.events.emit(this._inBasket ? 'card:remove' : 'basket:add', {
-					id: this.id,
-				});
+				if (this._inBasket) {
+					// Удаление из карточки товара - закрываем модальное окно
+					this.events.emit('card:remove', { id: this.id });
+				} else {
+					// Добавление в корзину - не закрываем модальное окно
+					this.events.emit('basket:add', { id: this.id });
+				}
 			});
 		}
 	}
