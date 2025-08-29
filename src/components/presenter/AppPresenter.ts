@@ -220,18 +220,18 @@ export class AppPresenter {
 		// Событие: открытие корзины
 		this.events.on('basket:open', () => {
 			// Обновляем общую стоимость перед открытием
-			this.basketModel.updateTotal(this.productCatalog.cards);
-
-			const basketElements = this.createBasketItems(this.basketModel.itemIds);
-			const basketItemsData = this.getBasketItemsData(this.basketModel.itemIds);
-
+			this.modal.open(this.basket.getContainer());
+			// Получаем актуальные данные корзины
 			const basketData = {
-				items: basketItemsData, // Данные карточек
+				items: this.getBasketItemsData(this.basketModel.itemIds),
 				total: this.basketModel.total,
 			};
 
-			this.basket.items = basketElements; // Элементы DOM
+			// Обновляем представление корзины
+			this.basket.items = this.createBasketItems(this.basketModel.itemIds);
 			this.basket.render(basketData);
+
+			// Открываем модальное окно
 			this.modal.open(this.basket.getContainer());
 		});
 
