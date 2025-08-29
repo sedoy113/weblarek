@@ -106,18 +106,6 @@ export class AppPresenter {
 		const cardElement = this.productCatalog.getCard(id);
 		if (!cardElement) return;
 		this.renderCatalog();
-
-		// const button = cardElement.querySelector('.card__button');
-		// if (!button) return;
-
-		// const inBasket = this.basketModel.hasItem(id);
-		// button.textContent = inBasket ? 'Убрать из корзины' : 'В корзину';
-
-		// if (inBasket) {
-		// 	button.classList.add('card__button_added');
-		// } else {
-		// 	button.classList.remove('card__button_added');
-		// }
 	}
 
 	/**
