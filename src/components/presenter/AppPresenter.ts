@@ -212,9 +212,9 @@ export class AppPresenter {
 				this.updateCardButton(card.id)
 			);
 
-			if (data.isEmpty && this.modal.close) {
-				this.modal.close();
-			}
+			// if (data.isEmpty && this.modal.close) {
+			// 	this.modal.close();
+			// }
 		});
 
 		// Событие: открытие корзины
@@ -326,8 +326,9 @@ export class AppPresenter {
 
 		// Событие: успешное оформление заказа
 		this.events.on('order:success', (data: { total: number }) => {
-			this.basketModel.clear();
 			this.modal.open(this.success.render({ total: data.total }));
+			this.basketModel.clear();
+			this.orderModel.clear();
 		});
 
 		// Событие: отправка формы контактов - финальное оформление заказа
