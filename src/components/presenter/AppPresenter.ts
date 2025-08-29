@@ -65,7 +65,7 @@ export class AppPresenter {
 			this.productCatalog.cards = cards.map((card) => ({
 				...card,
 				image: `${CDN_URL}${card.image}`,
-				inBasket: this.basketModel.hasItem(card.id),
+				inBasket: false,
 			}));
 		} catch (error) {
 			const errorMessage = (error as Error).message || 'Неизвестная ошибка';
