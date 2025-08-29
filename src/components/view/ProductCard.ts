@@ -130,4 +130,19 @@ export class ProductCard extends CardView {
 
 		return this.container;
 	}
+	/**
+	 * Обновление состояния кнопки корзины
+	 * @param inBasket Статус наличия в корзине
+	 */
+	updateButtonState(inBasket: boolean): void {
+		this.inBasket = inBasket; // Это вызовет сеттер, который уже обновляет текст
+
+		if (this._button) {
+			if (inBasket) {
+				this._button.classList.add('card__button_added');
+			} else {
+				this._button.classList.remove('card__button_added');
+			}
+		}
+	}
 }
