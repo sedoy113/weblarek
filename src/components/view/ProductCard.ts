@@ -127,7 +127,21 @@ export class ProductCard extends CardView {
 		if (cardData.image) this.image = cardData.image;
 		if (cardData.description) this.description = cardData.description;
 		if (cardData.inBasket !== undefined) this.inBasket = cardData.inBasket;
-
+		const button = this.container.querySelector('.card__button');
+		if (button) {
+			button.addEventListener('click', () => {
+				// Закрываем модальное окно через небольшую задержку
+				// чтобы дать время обновиться модели и UI
+				setTimeout(() => {
+					// Находим модальное окно и кнопку закрытия
+					const modal = document.querySelector('.modal');
+					const closeButton = modal?.querySelector('.modal__close');
+					if (closeButton) {
+						(closeButton as HTMLElement).click();
+					}
+				}, 50);
+			});
+		}
 		return this.container;
 	}
 	/**

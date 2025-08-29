@@ -148,6 +148,9 @@ export class AppPresenter {
 		this.events.on('initialData:loaded', () => {
 			this.renderCatalog();
 		});
+		// this.events.on('modal:close', () => {
+		// 	this.modal.close();
+		// });
 
 		// Событие: выбор товара - открываем модальное окно с деталями
 		this.events.on('product:select', ({ id }: { id: string }) => {
@@ -155,20 +158,36 @@ export class AppPresenter {
 			if (!cardData) return;
 
 			const cardElement = cloneTemplate('#card-preview');
-			const card = new ProductCard(cardElement, this.events);
-			this.modal.open(card.render(cardData));
+			const card = new ProductCard(cardElement, this.events); // Создаем экземпляр ProductCard
+
+			// Рендерим карточку
+			const renderedCard = card.render(cardData);
+
+			// Добавляем обработчик для кнопки закрытия
+			const closeButton = renderedCard.querySelector('.modal__close');
+			if (closeButton) {
+				closeButton.addEventListener('click', () => {
+					this.modal.close();
+				});
+			}
+
+			this.modal.open(renderedCard);
+
+			// const cardElement = cloneTemplate('#card-preview');
+			// const card = new ProductCard(cardElement, this.events);
+			// this.modal.open(card.render(cardData));
 		});
 
 		// Событие: добавление товара в корзину
 		this.events.on('basket:add', ({ id }: { id: string }) => {
 			this.basketModel.addItem(id);
-			this.modal.close();
+			// this.modal.close();
 		});
 
 		// Событие: удаление товара из корзины
 		this.events.on('basket:remove', ({ id }: { id: string }) => {
 			this.basketModel.removeItem(id);
-			this.modal.close();
+			// this.modal.close();
 		});
 
 		// Событие: изменение состояния корзины - обновляем отображение
