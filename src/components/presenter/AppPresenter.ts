@@ -185,7 +185,7 @@ export class AppPresenter {
 		// Событие: изменение состояния корзины - обновляем отображение
 		this.events.on('basket:changed', (data: IBasket) => {
 			// Обновляем общую стоимость с актуальными данными о ценах
-			this.basketModel.updateTotal(this.getCardsMap());
+			this.basketModel.updateTotal(this.productCatalog.cards);
 
 			// Обновляем статус inBasket для всех карточек в каталоге
 			this.productCatalog.cards = this.productCatalog.cards.map((card) => ({
@@ -220,7 +220,7 @@ export class AppPresenter {
 		// Событие: открытие корзины
 		this.events.on('basket:open', () => {
 			// Обновляем общую стоимость перед открытием
-			this.basketModel.updateTotal(this.getCardsMap());
+			this.basketModel.updateTotal(this.productCatalog.cards);
 
 			const basketElements = this.createBasketItems(this.basketModel.itemIds);
 			const basketItemsData = this.getBasketItemsData(this.basketModel.itemIds);
@@ -337,7 +337,7 @@ export class AppPresenter {
 				const orderData = this.orderModel.getOrder();
 
 				// Обновляем общую стоимость перед отправкой
-				this.basketModel.updateTotal(this.getCardsMap());
+				this.basketModel.updateTotal(this.productCatalog.cards);
 
 				const fullOrder: IOrder = {
 					...orderData,

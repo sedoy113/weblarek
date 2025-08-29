@@ -1,4 +1,5 @@
 import { IEvents } from '../base/Events';
+import { ICard } from '../../types'; // Добавляем импорт ICard
 
 /**
  * Модель корзины для управления товарами
@@ -75,13 +76,19 @@ export class BasketModel {
 
 	/**
 	 * Обновляет общую стоимость на основе данных о товарах
-	 * @param cards - Map с данными о товарах (id -> цена)
+	 * @param cards - массив с данными о товарах
 	 */
-	updateTotal(cards: Map<string, { price: number }>): void {
-		this._total = Array.from(this._items.values()).reduce((sum, id) => {
-			const item = cards.get(id);
-			return sum + (item?.price ?? 0);
+	updateTotal(cards: ICard[]): void {
+		const newTotal = this.itemIds.reduce((sum, id) => {
+			const card = cards.find((c) => c.id === id);
+			return sum + (card?.price || 0);
 		}, 0);
+
+		// Обновляем total только если значение изменилось
+		if (this._total !== newTotal) {
+			this._total = newTotal;
+			// Не вызываем emitChange() здесь, чтобы избежать рекурсии
+		}
 	}
 
 	/**
@@ -141,10 +148,10 @@ export class BasketModel {
 	 * @param state - сериализованное состояние
 	 */
 	restore(state: BasketState): void {
-		this.clear();
-		state.itemIds.forEach((id) => {
-			this.addItem(id);
-		});
+		this._items = new Set(state.itemIds);
+		this._total = state.total;
+		this._itemCount = state.itemCount;
+		this.emitChange();
 	}
 }
 
