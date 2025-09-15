@@ -159,23 +159,7 @@ export class AppPresenter {
 
 			const cardElement = cloneTemplate('#card-preview');
 			const card = new ProductCard(cardElement, this.events); // Создаем экземпляр ProductCard
-
-			// Рендерим карточку
-			const renderedCard = card.render(cardData);
-
-			// Добавляем обработчик для кнопки закрытия
-			const closeButton = renderedCard.querySelector('.modal__close');
-			if (closeButton) {
-				closeButton.addEventListener('click', () => {
-					this.modal.close();
-				});
-			}
-
-			this.modal.open(renderedCard);
-
-			// const cardElement = cloneTemplate('#card-preview');
-			// const card = new ProductCard(cardElement, this.events);
-			// this.modal.open(card.render(cardData));
+			this.modal.open(card.render(cardData));
 		});
 
 		// Событие: добавление товара в корзину
