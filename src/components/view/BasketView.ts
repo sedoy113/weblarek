@@ -31,6 +31,15 @@ export class Basket extends Component<IBasket> {
 	}
 
 	/**
+	 * Проверить, является ли переданный элемент контейнером корзины
+	 * @param element - элемент для проверки
+	 * @returns boolean - true если элемент является контейнером корзины
+	 */
+	public isBasketContainer(element: HTMLElement): boolean {
+		return element === this.container;
+	}
+
+	/**
 	 * Конструктор класса
 	 *
 	 * @param container - корневой DOM-элемент компонента

@@ -46,7 +46,8 @@ export class AppPresenter {
 		// Инициализация моделей
 		this.orderModel = new OrderModel(events);
 		this.basketModel = new BasketModel(events);
-
+		// Передаем данные карточек в модель корзины
+		this.basketModel.setCards(this.productCatalog.cards);
 		// Настройка обработчиков событий
 		this.setupEventListeners();
 
@@ -134,11 +135,11 @@ export class AppPresenter {
 			.filter((item): item is HTMLElement => item !== null);
 	}
 
-	private getBasketItemsData(itemIds: string[]): ICard[] {
-		return itemIds
-			.map((id) => this.productCatalog.getCard(id))
-			.filter((card): card is ICard => card !== null);
-	}
+	// private getBasketItemsData(itemIds: string[]): ICard[] {
+	// 	return itemIds
+	// 		.map((id) => this.productCatalog.getCard(id))
+	// 		.filter((card): card is ICard => card !== null);
+	// }
 
 	/**
 	 * Настройка обработчиков событий для коммуникации между компонентами
@@ -146,11 +147,9 @@ export class AppPresenter {
 	private setupEventListeners(): void {
 		// Событие: данные загружены - отрисовываем каталог
 		this.events.on('initialData:loaded', () => {
+			this.basketModel.setCards(this.productCatalog.cards);
 			this.renderCatalog();
 		});
-		// this.events.on('modal:close', () => {
-		// 	this.modal.close();
-		// });
 
 		// Событие: выбор товара - открываем модальное окно с деталями
 		this.events.on('product:select', ({ id }: { id: string }) => {
@@ -165,32 +164,28 @@ export class AppPresenter {
 		// Событие: добавление товара в корзину
 		this.events.on('basket:add', ({ id }: { id: string }) => {
 			this.basketModel.addItem(id);
-			// this.modal.close();
 		});
 
 		// Событие: удаление товара из корзины
 		this.events.on('basket:remove', ({ id }: { id: string }) => {
 			this.basketModel.removeItem(id);
-			// this.modal.close();
 		});
 
 		// Событие: изменение состояния корзины - обновляем отображение
 		this.events.on('basket:changed', (data: IBasket) => {
-			// Обновляем общую стоимость с актуальными данными о ценах
-			this.basketModel.updateTotal(this.productCatalog.cards);
-
 			// Обновляем статус inBasket для всех карточек в каталоге
 			this.productCatalog.cards = this.productCatalog.cards.map((card) => ({
 				...card,
 				inBasket: this.basketModel.hasItem(card.id),
 			}));
 
-			// Создаем элементы корзины и получаем данные
-			const basketElements = this.createBasketItems(data.itemIds);
-			// const basketItemsData = this.getBasketItemsData(data.itemIds);
+			// Обновляем представление корзины только если она открыта
+			if (this.modal.isOpen()) {
+				const basketElements = this.createBasketItems(data.itemIds);
+				this.basket.items = basketElements;
+			}
 
-			// Обновляем представление корзины
-			this.basket.items = basketElements;
+			// Обновляем общую сумму
 			this.basket.render({
 				total: data.total,
 			});
@@ -207,7 +202,6 @@ export class AppPresenter {
 		// Событие: открытие корзины
 		this.events.on('basket:open', () => {
 			// Обновляем общую стоимость перед открытием
-			this.basketModel.updateTotal(this.productCatalog.cards);
 
 			// Создаем элементы корзины
 			const basketElements = this.createBasketItems(this.basketModel.itemIds);
@@ -326,7 +320,7 @@ export class AppPresenter {
 				const orderData = this.orderModel.getOrder();
 
 				// Обновляем общую стоимость перед отправкой
-				this.basketModel.updateTotal(this.productCatalog.cards);
+				this.basketModel.setCards(this.productCatalog.cards);
 
 				const fullOrder: IOrder = {
 					...orderData,

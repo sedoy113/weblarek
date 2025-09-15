@@ -23,12 +23,28 @@ export class Modal extends Component<unknown> {
 	private closeButton: HTMLButtonElement;
 
 	/**
+	 * Получить текущее содержимое модального окна
+	 * @returns HTMLElement | null - текущее содержимое
+	 */
+	public getContent(): HTMLElement | null {
+		return this.content;
+	}
+
+	/**
+	 * Проверить, открыто ли модальное окно
+	 * @returns boolean - true если окно открыто
+	 */
+	public isOpen(): boolean {
+		return this.container.classList.contains('modal_active');
+	}
+	/**
 	 * Creates an instance of Modal.
 	 * Инициализирует модальное окно и устанавливает обработчики событий
 	 *
 	 * @param {HTMLElement} container - DOM-контейнер модального окна
 	 * @param {IEvents} events - Система событий приложения
 	 */
+
 	constructor(container: HTMLElement, protected events: IEvents) {
 		super(container);
 
