@@ -73,9 +73,13 @@ export class Basket extends Component<IBasket> {
 		if (items.length === 0) {
 			// Если корзина пуста, отображаем сообщение
 			this._listContainer.textContent = 'Корзина пуста';
+			// Блокируем кнопку оформления заказа
+			this.buttonDisabled = true;
 		} else {
 			// Добавляем все элементы списка
 			this._listContainer.append(...items);
+			// Разблокируем кнопку оформления заказа
+			this.buttonDisabled = false;
 		}
 	}
 
@@ -87,9 +91,9 @@ export class Basket extends Component<IBasket> {
 	 * @remarks
 	 * Делегирует работу методу items
 	 */
-	set list(items: HTMLElement[]) {
-		this.items = items;
-	}
+	// set list(items: HTMLElement[]) {
+	// 	this.items = items;
+	// }
 
 	/**
 	 * Установить общую сумму заказа
@@ -123,7 +127,7 @@ export class Basket extends Component<IBasket> {
 		}
 
 		// Блокировка/разблокировка кнопки оформления заказа
-		this.buttonDisabled = !data.items?.length;
+		// this.buttonDisabled = !data.items?.length;
 
 		// Возврат контейнера компонента
 		return this.container;

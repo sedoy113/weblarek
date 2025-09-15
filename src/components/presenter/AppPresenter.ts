@@ -187,12 +187,11 @@ export class AppPresenter {
 
 			// Создаем элементы корзины и получаем данные
 			const basketElements = this.createBasketItems(data.itemIds);
-			const basketItemsData = this.getBasketItemsData(data.itemIds);
+			// const basketItemsData = this.getBasketItemsData(data.itemIds);
 
 			// Обновляем представление корзины
 			this.basket.items = basketElements;
 			this.basket.render({
-				items: basketItemsData, // Передаем данные карточек
 				total: data.total,
 			});
 
@@ -203,25 +202,23 @@ export class AppPresenter {
 			this.productCatalog.cards.forEach((card) =>
 				this.updateCardButton(card.id)
 			);
-
-			// if (data.isEmpty && this.modal.close) {
-			// 	this.modal.close();
-			// }
 		});
 
 		// Событие: открытие корзины
 		this.events.on('basket:open', () => {
 			// Обновляем общую стоимость перед открытием
-			this.modal.open(this.basket.getContainer());
-			// Получаем актуальные данные корзины
-			const basketData = {
-				items: this.getBasketItemsData(this.basketModel.itemIds),
-				total: this.basketModel.total,
-			};
+			this.basketModel.updateTotal(this.productCatalog.cards);
 
-			// Обновляем представление корзины
-			this.basket.items = this.createBasketItems(this.basketModel.itemIds);
-			this.basket.render(basketData);
+			// Создаем элементы корзины
+			const basketElements = this.createBasketItems(this.basketModel.itemIds);
+
+			// Обновляем представление корзины - передаем только элементы
+			this.basket.items = basketElements;
+
+			// Обновляем только общую сумму
+			this.basket.render({
+				total: this.basketModel.total,
+			});
 
 			// Открываем модальное окно
 			this.modal.open(this.basket.getContainer());
