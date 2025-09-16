@@ -136,23 +136,10 @@ export class AppPresenter {
 			})
 			.filter((item): item is HTMLElement => item !== null);
 	}
-
-	// private getBasketItemsData(itemIds: string[]): ICard[] {
-	// 	return itemIds
-	// 		.map((id) => this.productCatalog.getCard(id))
-	// 		.filter((card): card is ICard => card !== null);
-	// }
-
 	/**
 	 * Настройка обработчиков событий для коммуникации между компонентами
 	 */
 	private setupEventListeners(): void {
-		// Событие: данные загружены - отрисовываем каталог
-		// this.events.on('initialData:loaded', () => {
-		// 	this.basketModel.setCards(this.productCatalog.cards);
-		// 	this.renderCatalog();
-		// });
-
 		// Событие: выбор товара - открываем модальное окно с деталями
 		this.events.on('product:select', ({ id }: { id: string }) => {
 			const cardData = this.productCatalog.getCard(id);
