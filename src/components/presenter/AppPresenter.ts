@@ -66,8 +66,10 @@ export class AppPresenter {
 			this.productCatalog.cards = cards.map((card) => ({
 				...card,
 				image: `${CDN_URL}${card.image}`,
-				inBasket: false,
+				inBasket: this.basketModel.hasItem(card.id),
 			}));
+			this.basketModel.setCards(this.productCatalog.cards);
+			this.renderCatalog();
 		} catch (error) {
 			const errorMessage = (error as Error).message || 'Неизвестная ошибка';
 			this.modal.open(
@@ -146,10 +148,10 @@ export class AppPresenter {
 	 */
 	private setupEventListeners(): void {
 		// Событие: данные загружены - отрисовываем каталог
-		this.events.on('initialData:loaded', () => {
-			this.basketModel.setCards(this.productCatalog.cards);
-			this.renderCatalog();
-		});
+		// this.events.on('initialData:loaded', () => {
+		// 	this.basketModel.setCards(this.productCatalog.cards);
+		// 	this.renderCatalog();
+		// });
 
 		// Событие: выбор товара - открываем модальное окно с деталями
 		this.events.on('product:select', ({ id }: { id: string }) => {
@@ -163,7 +165,10 @@ export class AppPresenter {
 
 		// Событие: добавление товара в корзину
 		this.events.on('basket:add', ({ id }: { id: string }) => {
-			this.basketModel.addItem(id);
+			const cardData = this.productCatalog.getCard(id);
+			if (cardData) {
+				this.basketModel.addItem(cardData);
+			}
 		});
 
 		// Событие: удаление товара из корзины

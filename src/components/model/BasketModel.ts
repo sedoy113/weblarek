@@ -2,10 +2,10 @@ import { IEvents } from '../base/Events';
 import { ICard } from '../../types';
 
 export class BasketModel {
-	private _items: Set<string> = new Set();
+	private _items: Map<string, ICard> = new Map();
 	private _total = 0;
 	private _itemCount = 0;
-	private _cards: ICard[] = []; // Храним ссылку на карточки для пересчета
+	private _cards: Map<string, ICard> = new Map(); // Кэш карточек для быстрого доступа
 
 	constructor(private events: IEvents) {}
 
@@ -13,15 +13,29 @@ export class BasketModel {
 	 * Устанавливает данные карточек для пересчета суммы
 	 */
 	setCards(cards: ICard[]): void {
-		this._cards = cards;
+		// Обновляем кэш карточек
+		this._cards = new Map(cards.map((card) => [card.id, card]));
+
+		// Обновляем ссылки на карточки в корзине
+		const updatedItems = new Map<string, ICard>();
+
+		this._items.forEach((card, id) => {
+			const updatedCard = this._cards.get(id);
+			if (updatedCard) {
+				updatedItems.set(id, updatedCard);
+			}
+		});
+
+		this._items = updatedItems;
+		this.updateTotal(false); // Не вызываем emitChange
 	}
 
-	addItem(id: string): boolean {
-		if (this._items.has(id)) return false;
+	addItem(card: ICard): boolean {
+		if (this._items.has(card.id)) return false;
 
-		this._items.add(id);
+		this._items.set(card.id, card);
 		this._itemCount++;
-		this.updateTotal(); // Автоматически обновляем сумму при добавлении
+		this.updateTotal();
 
 		this.emitChange();
 		return true;
@@ -32,7 +46,7 @@ export class BasketModel {
 
 		this._items.delete(id);
 		this._itemCount--;
-		this.updateTotal(); // Автоматически обновляем сумму при удалении
+		this.updateTotal();
 
 		this.emitChange();
 		return true;
@@ -40,6 +54,10 @@ export class BasketModel {
 
 	hasItem(id: string): boolean {
 		return this._items.has(id);
+	}
+
+	getItem(id: string): ICard | undefined {
+		return this._items.get(id);
 	}
 
 	getItemQuantity(id: string): number {
@@ -57,20 +75,26 @@ export class BasketModel {
 	/**
 	 * Обновляет общую стоимость на основе текущих данных о товарах
 	 */
-	updateTotal(): void {
-		const newTotal = this.itemIds.reduce((sum, id) => {
-			const card = this._cards.find((c) => c.id === id);
-			return sum + (card?.price || 0);
-		}, 0);
+	private updateTotal(emitEvent: boolean = true): void {
+		const newTotal = Array.from(this._items.values()).reduce(
+			(sum, card) => sum + (card?.price || 0),
+			0
+		);
 
-		// Обновляем total только если значение изменилось
 		if (this._total !== newTotal) {
 			this._total = newTotal;
+			if (emitEvent) {
+				this.emitChange();
+			}
 		}
 	}
 
 	get itemIds(): string[] {
-		return Array.from(this._items);
+		return Array.from(this._items.keys());
+	}
+
+	get items(): ICard[] {
+		return Array.from(this._items.values());
 	}
 
 	get total(): number {
@@ -106,8 +130,17 @@ export class BasketModel {
 		};
 	}
 
-	restore(state: BasketState): void {
-		this._items = new Set(state.itemIds);
+	restore(state: BasketState, cards: ICard[]): void {
+		this._cards = new Map(cards.map((card) => [card.id, card]));
+		this._items = new Map();
+
+		state.itemIds.forEach((id) => {
+			const card = this._cards.get(id);
+			if (card) {
+				this._items.set(id, card);
+			}
+		});
+
 		this._total = state.total;
 		this._itemCount = state.itemCount;
 		this.emitChange();
