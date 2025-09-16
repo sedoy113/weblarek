@@ -166,29 +166,25 @@ export class AppPresenter {
 		// Событие: изменение состояния корзины - обновляем отображение
 		this.events.on('basket:changed', (data: IBasket) => {
 			// Обновляем статус inBasket для всех карточек в каталоге
-			this.productCatalog.cards = this.productCatalog.cards.map((card) => ({
-				...card,
-				inBasket: this.basketModel.hasItem(card.id),
-			}));
+			this.page.counter = data.itemCount;
 
 			// Обновляем представление корзины только если она открыта
 			if (this.modal.isOpen()) {
 				const basketElements = this.createBasketItems(data.itemIds);
 				this.basket.items = basketElements;
+				this.basket.render({ total: data.total });
 			}
 
-			// Обновляем общую сумму
-			this.basket.render({
-				total: data.total,
+			// Обновляем состояние конкретных карточек, которые изменились
+			// (это можно оптимизировать, если передавать id измененной карточки)
+			// Пока обновляем все карточки, но это все равно лучше чем пересоздавать весь массив
+			this.productCatalog.cards.forEach((card) => {
+				const newInBasket = this.basketModel.hasItem(card.id);
+				if (card.inBasket !== newInBasket) {
+					card.inBasket = newInBasket;
+					this.updateCardButton(card.id);
+				}
 			});
-
-			// Обновляем счетчик товаров
-			this.page.counter = data.itemCount;
-
-			// Обновляем состояние кнопок всех карточек
-			this.productCatalog.cards.forEach((card) =>
-				this.updateCardButton(card.id)
-			);
 		});
 
 		// Событие: открытие корзины
