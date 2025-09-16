@@ -27,14 +27,19 @@ export class AppPresenter {
 	private success: SuccessView;
 
 	// Модели данных (Model)
+	private productCatalog: ProductCatalogModel;
 	private basketModel: BasketModel;
 	private orderModel: OrderModel;
 
 	constructor(
 		private api: AppApi,
-		private productCatalog: ProductCatalogModel,
+		// private productCatalog: ProductCatalogModel,
 		private events: IEvents
 	) {
+		// Инициализация моделей внутри презентера
+		this.productCatalog = new ProductCatalogModel(events);
+		this.orderModel = new OrderModel(events);
+		this.basketModel = new BasketModel(events);
 		// Инициализация компонентов представления
 		this.page = new Page(document.body, events);
 		this.modal = new Modal(document.querySelector('#modal-container'), events);
