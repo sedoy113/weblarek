@@ -189,15 +189,6 @@ export class AppPresenter {
 
 		// Событие: открытие корзины
 		this.events.on('basket:open', () => {
-			// Обновляем общую стоимость перед открытием
-
-			// Создаем элементы корзины
-			const basketElements = this.createBasketItems(this.basketModel.itemIds);
-
-			// Обновляем представление корзины - передаем только элементы
-			this.basket.items = basketElements;
-
-			// Обновляем только общую сумму
 			this.basket.render({
 				total: this.basketModel.total,
 			});
