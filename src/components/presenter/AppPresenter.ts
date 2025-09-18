@@ -71,7 +71,6 @@ export class AppPresenter {
 				image: `${CDN_URL}${card.image}`,
 				inBasket: this.basketModel.hasItem(card.id),
 			}));
-			this.renderCatalog();
 		} catch (error) {
 			const errorMessage = (error as Error).message || 'Неизвестная ошибка';
 			this.modal.open(
@@ -150,6 +149,9 @@ export class AppPresenter {
 	 * Настройка обработчиков событий для коммуникации между компонентами
 	 */
 	private setupEventListeners(): void {
+		this.events.on('products:show', () => {
+			this.renderCatalog();
+		});
 		// Событие: выбор товара - открываем модальное окно с деталями
 		this.events.on('product:select', ({ id }: { id: string }) => {
 			const cardData = this.productCatalog.getCard(id);

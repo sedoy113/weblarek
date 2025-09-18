@@ -27,6 +27,8 @@ export class ProductCatalogModel implements ICardsData {
 		this._products = products;
 		// Генерация события о загрузке начальных данных
 		this.events.emit('initialData:loaded');
+		// Генерация события для отображения продуктов
+		this.events.emit('products:show');
 	}
 
 	// Метод для поиска карточки по идентификатору
