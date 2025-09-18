@@ -49,7 +49,7 @@ export class AppPresenter {
 		this.success = new SuccessView(cloneTemplate('#success'), events);
 
 		// Инициализация моделей
-		this.orderModel = new OrderModel(events);
+		// this.orderModel = new OrderModel(events);
 		this.basketModel = new BasketModel(events);
 		// Настройка обработчиков событий
 		this.setupEventListeners();
