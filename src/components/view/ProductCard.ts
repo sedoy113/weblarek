@@ -17,15 +17,22 @@ export class ProductCard extends CardView {
 
 	/** @private Статус наличия товара в корзине */
 	private _inBasket = false;
+	/** @private Кастомный обработчик клика на кнопку */
+	private _onClick?: () => void;
 
 	/**
 	 * Конструктор компонента
 	 * @param container DOM-контейнер для монтирования карточки
 	 * @param events Объект событий для взаимодействия с другими компонентами
 	 */
-	constructor(container: HTMLElement, private events: IEvents) {
+	constructor(
+		container: HTMLElement,
+		private events: IEvents,
+		handlers?: { onClick?: () => void }
+	) {
 		super(container);
-
+		// Сохраняем кастомный обработчик
+		this._onClick = handlers?.onClick;
 		// Инициализация элементов интерфейса
 		this._description = container.querySelector('.card__text');
 		this._button = container.querySelector('.card__button');
@@ -50,12 +57,18 @@ export class ProductCard extends CardView {
 			this._button.addEventListener('click', (evt) => {
 				evt.stopPropagation();
 
-				if (this._inBasket) {
-					// Удаление из карточки товара - закрываем модальное окно
-					this.events.emit('basket:remove', { id: this.id });
+				// Используем кастомный обработчик если он передан
+				if (this._onClick) {
+					this._onClick();
 				} else {
-					// Добавление в корзину - не закрываем модальное окно
-					this.events.emit('basket:add', { id: this.id });
+					// Иначе используем стандартное поведение
+					if (this._inBasket) {
+						// Удаление из карточки товара
+						this.events.emit('basket:remove', { id: this.id });
+					} else {
+						// Добавление в корзину
+						this.events.emit('basket:add', { id: this.id });
+					}
 				}
 			});
 		}
@@ -84,9 +97,16 @@ export class ProductCard extends CardView {
 	set inBasket(value: boolean) {
 		this._inBasket = value;
 
-		// Обновление текста на кнопке
+		// Обновление текста и стиля на кнопке
 		if (this._button) {
-			this.setText(this._button, value ? 'Убрать' : 'В корзину');
+			this.setText(this._button, value ? 'Убрать из корзины' : 'В корзину');
+
+			// Обновление стиля кнопки
+			if (value) {
+				this._button.classList.add('card__button_added');
+			} else {
+				this._button.classList.remove('card__button_added');
+			}
 		}
 	}
 
@@ -127,36 +147,11 @@ export class ProductCard extends CardView {
 		if (cardData.image) this.image = cardData.image;
 		if (cardData.description) this.description = cardData.description;
 		if (cardData.inBasket !== undefined) this.inBasket = cardData.inBasket;
-		const button = this.container.querySelector('.card__button');
-		if (button) {
-			button.addEventListener('click', () => {
-				// Закрываем модальное окно через небольшую задержку
-				// чтобы дать время обновиться модели и UI
-				setTimeout(() => {
-					// Находим модальное окно и кнопку закрытия
-					const modal = document.querySelector('.modal');
-					const closeButton = modal?.querySelector('.modal__close');
-					if (closeButton) {
-						(closeButton as HTMLElement).click();
-					}
-				}, 50);
-			});
-		}
 		return this.container;
 	}
-	/**
-	 * Обновление состояния кнопки корзины
-	 * @param inBasket Статус наличия в корзине
-	 */
-	updateButtonState(inBasket: boolean): void {
-		this.inBasket = inBasket; // Это вызовет сеттер, который уже обновляет текст
-
+	set button(text: string) {
 		if (this._button) {
-			if (inBasket) {
-				this._button.classList.add('card__button_added');
-			} else {
-				this._button.classList.remove('card__button_added');
-			}
+			this.setText(this._button, text);
 		}
 	}
 }

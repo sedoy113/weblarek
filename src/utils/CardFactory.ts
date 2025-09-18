@@ -22,14 +22,15 @@ import { ProductCard } from '../components/view/ProductCard';
 export function createProductCard(
 	cardData: ICard,
 	events: IEvents,
-	templateId: string
+	templateId: string,
+	handlers?: { onClick?: () => void }
 ): HTMLElement {
-	// Клонирование HTML-шаблона по указанному ID
 	const element = cloneTemplate(templateId);
+	const card = new ProductCard(element, events, handlers);
 
-	// Создание экземпляра компонента ProductCard
-	const card = new ProductCard(element, events);
+	card.inBasket = cardData.inBasket;
 
-	// Рендеринг карточки с переданными данными и возврат DOM-элемента
+	// Рендерим карточку с переданными данными
+	// Свойство inBasket автоматически обновит состояние кнопки через сеттер
 	return card.render({ ...cardData });
 }

@@ -93,7 +93,17 @@ export class AppPresenter {
 	 */
 	private renderCatalog(): void {
 		const cardsArray = this.productCatalog.cards.map((card) =>
-			createProductCard(card, this.events, '#card-catalog')
+			createProductCard(card, this.events, '#card-catalog', {
+				onClick: () => {
+					if (this.basketModel.hasItem(card.id)) {
+						this.events.emit('basket:remove', { id: card.id });
+					} else {
+						this.events.emit('basket:add', { id: card.id });
+						// Закрываем модальное окно при добавлении в корзину из каталога
+						this.modal.close();
+					}
+				},
+			})
 		);
 
 		this.page.gallery = cardsArray.length
@@ -109,7 +119,6 @@ export class AppPresenter {
 	private updateCardButton(id: string): void {
 		const cardElement = this.productCatalog.getCard(id);
 		if (!cardElement) return;
-		this.renderCatalog();
 	}
 
 	/**
@@ -155,11 +164,41 @@ export class AppPresenter {
 		// Событие: выбор товара - открываем модальное окно с деталями
 		this.events.on('product:select', ({ id }: { id: string }) => {
 			const cardData = this.productCatalog.getCard(id);
-			if (!cardData) return;
+			if (!cardData) {
+				this.modal.close();
+				return;
+			}
 
+			// Создаем карточку с обработчиком кнопки
 			const cardElement = cloneTemplate('#card-preview');
-			const card = new ProductCard(cardElement, this.events); // Создаем экземпляр ProductCard
-			this.modal.open(card.render(cardData));
+			const card = new ProductCard(cardElement, this.events, {
+				onClick: () => {
+					// Проверяем есть ли товар в корзине и реализуем удаление или добавление
+					if (this.basketModel.hasItem(cardData.id)) {
+						this.basketModel.removeItem(cardData.id);
+						// Обновляем состояние карточки - автоматически обновит текст и стиль
+						card.inBasket = false;
+						this.modal.close();
+					} else {
+						this.basketModel.addItem({
+							id: cardData.id,
+							price: cardData.price,
+							title: cardData.title,
+						});
+						// Обновляем состояние карточки - автоматически обновит текст и стиль
+						card.inBasket = true;
+						// Закрываем модальное окно при добавлении в корзину
+						this.modal.close();
+					}
+				},
+			});
+
+			card.inBasket = this.basketModel.hasItem(cardData.id);
+			const renderedCard = card.render({
+				...cardData,
+				inBasket: this.basketModel.hasItem(cardData.id),
+			});
+			this.modal.open(renderedCard);
 		});
 
 		// Событие: добавление товара в корзину
