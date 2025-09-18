@@ -28,6 +28,12 @@ export interface IBasket {
 	isEmpty: boolean;
 }
 
+export interface BasketItem {
+	id: string;
+	price: number;
+	title: string;
+}
+
 export interface ICardsData {
 	cards: ICard[];
 	getCard(cardId: string): ICard;

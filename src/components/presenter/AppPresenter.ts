@@ -51,8 +51,6 @@ export class AppPresenter {
 		// Инициализация моделей
 		this.orderModel = new OrderModel(events);
 		this.basketModel = new BasketModel(events);
-		// Передаем данные карточек в модель корзины
-		this.basketModel.setCards(this.productCatalog.cards);
 		// Настройка обработчиков событий
 		this.setupEventListeners();
 
@@ -73,7 +71,6 @@ export class AppPresenter {
 				image: `${CDN_URL}${card.image}`,
 				inBasket: this.basketModel.hasItem(card.id),
 			}));
-			this.basketModel.setCards(this.productCatalog.cards);
 			this.renderCatalog();
 		} catch (error) {
 			const errorMessage = (error as Error).message || 'Неизвестная ошибка';
@@ -126,8 +123,8 @@ export class AppPresenter {
 
 		return itemIds
 			.map((id, index) => {
-				const cardData = this.productCatalog.getCard(id);
-				if (!cardData) return null;
+				const basketItem = this.basketModel.getItem(id);
+				if (!basketItem) return null;
 
 				const cardElement = cloneTemplate('#card-basket');
 				const itemView = new BasketItemView(
@@ -136,7 +133,15 @@ export class AppPresenter {
 					id,
 					index + 1
 				);
-				itemView.render(cardData);
+
+				// Используем данные из корзины, а не из каталога
+				itemView.render({
+					id: basketItem.id,
+					title: basketItem.title,
+					price: basketItem.price,
+					// Остальные поля, которые могут понадобиться для отображения
+				});
+
 				return itemView.container;
 			})
 			.filter((item): item is HTMLElement => item !== null);
@@ -159,7 +164,12 @@ export class AppPresenter {
 		this.events.on('basket:add', ({ id }: { id: string }) => {
 			const cardData = this.productCatalog.getCard(id);
 			if (cardData) {
-				this.basketModel.addItem(cardData);
+				// Передаем только необходимые данные в корзину
+				this.basketModel.addItem({
+					id: cardData.id,
+					price: cardData.price,
+					title: cardData.title,
+				});
 			}
 		});
 
@@ -303,9 +313,6 @@ export class AppPresenter {
 			try {
 				const orderData = this.orderModel.getOrder();
 
-				// Обновляем общую стоимость перед отправкой
-				this.basketModel.setCards(this.productCatalog.cards);
-
 				const fullOrder: IOrder = {
 					...orderData,
 					items: this.basketModel.itemIds,
@@ -314,7 +321,6 @@ export class AppPresenter {
 
 				const response = await this.api.orderCards(fullOrder);
 				this.events.emit('order:success', { total: response.total });
-
 				this.basketModel.clear();
 				this.orderModel.clear();
 			} catch (error) {

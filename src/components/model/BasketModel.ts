@@ -1,24 +1,19 @@
 import { IEvents } from '../base/Events';
-import { ICard } from '../../types';
+import { BasketItem } from '../../types';
 
 /**
  * Модель корзины для управления товарными позициями и расчетом стоимости
  */
 export class BasketModel {
 	/**
-	 * Приватное свойство - коллекция товаров в корзине (Map для эффективного доступа)
+	 * Приватное свойство - коллекция товаров в корзине
 	 */
-	private _items: Map<string, ICard> = new Map();
+	private _items: Map<string, BasketItem> = new Map();
 
 	/**
 	 * Общая стоимость товаров в корзине
 	 */
 	private _total = 0;
-
-	/**
-	 * Кэш карточек товаров для быстрого доступа
-	 */
-	private _cards: Map<string, ICard> = new Map();
 
 	/**
 	 * Конструктор модели корзины
@@ -27,45 +22,15 @@ export class BasketModel {
 	constructor(private events: IEvents) {}
 
 	/**
-	 * Обновляет кэш карточек и синхронизирует корзину с актуальными данными
-	 * @param cards - массив новых карточек
-	 */
-	setCards(cards: ICard[]): void {
-		// Обновляем кэш карточек
-		this._cards = new Map(cards.map((card) => [card.id, card]));
-
-		// Обновляем корзину, используя актуальные данные из кэша
-		const updatedItems = new Map<string, ICard>();
-		for (const [id] of this._items.entries()) {
-			const updatedCard = this._cards.get(id);
-			if (updatedCard) {
-				updatedItems.set(id, updatedCard);
-			} else {
-				console.warn(`Карточка с ID ${id} отсутствует в кэше`);
-			}
-		}
-
-		this._items = updatedItems;
-		this.updateTotal(false); // Пересчет суммы без эмита события
-	}
-
-	/**
 	 * Добавляет товар в корзину
-	 * @param card - карточка товара
+	 * @param item - данные товара для корзины
 	 * @returns true, если товар успешно добавлен
 	 */
-	addItem(card: ICard): boolean {
-		// Проверяем наличие карточки в кэше перед добавлением
-		if (!this._cards.has(card.id)) {
-			console.warn(`Карточка с ID ${card.id} отсутствует в кэше`);
-			return false;
-		}
+	addItem(item: BasketItem): boolean {
+		if (this._items.has(item.id)) return false;
 
-		if (this._items.has(card.id)) return false;
-
-		this._items.set(card.id, card);
+		this._items.set(item.id, item);
 		this.updateTotal();
-
 		this.emitChange();
 		return true;
 	}
@@ -80,7 +45,6 @@ export class BasketModel {
 
 		this._items.delete(id);
 		this.updateTotal();
-
 		this.emitChange();
 		return true;
 	}
@@ -95,21 +59,12 @@ export class BasketModel {
 	}
 
 	/**
-	 * Получает карточку товара из корзины
+	 * Получает данные товара из корзины
 	 * @param id - идентификатор товара
-	 * @returns карточка товара или undefined
+	 * @returns данные товара или undefined
 	 */
-	getItem(id: string): ICard | undefined {
+	getItem(id: string): BasketItem | undefined {
 		return this._items.get(id);
-	}
-
-	/**
-	 * Возвращает количество товара в корзине (всегда 1 штука за ID)
-	 * @param id - идентификатор товара
-	 * @returns 1 или 0
-	 */
-	getItemQuantity(id: string): number {
-		return this._items.has(id) ? 1 : 0;
 	}
 
 	/**
@@ -118,26 +73,18 @@ export class BasketModel {
 	clear(): void {
 		this._items.clear();
 		this._total = 0;
-
 		this.emitChange();
 	}
 
 	/**
 	 * Пересчитывает общую стоимость товаров в корзине
-	 * @param emitEvent - флаг отправки события об изменении
+	 * @private
 	 */
-	private updateTotal(emitEvent: boolean = true): void {
-		const newTotal = Array.from(this._items.values()).reduce(
-			(sum, card) => sum + (card.price || 0),
+	private updateTotal(): void {
+		this._total = Array.from(this._items.values()).reduce(
+			(sum, item) => sum + item.price,
 			0
 		);
-
-		if (this._total !== newTotal) {
-			this._total = newTotal;
-			if (emitEvent) {
-				this.emitChange();
-			}
-		}
 	}
 
 	/**
@@ -148,9 +95,9 @@ export class BasketModel {
 	}
 
 	/**
-	 * Возвращает массив карточек товаров в корзине
+	 * Возвращает массив данных товаров в корзине
 	 */
-	get items(): ICard[] {
+	get items(): BasketItem[] {
 		return Array.from(this._items.values());
 	}
 
@@ -165,7 +112,7 @@ export class BasketModel {
 	 * Возвращает количество товаров в корзине
 	 */
 	get itemCount(): number {
-		return this._items.size; // Используем размер Map вместо отдельного счетчика
+		return this._items.size;
 	}
 
 	/**
@@ -183,7 +130,7 @@ export class BasketModel {
 		this.events.emit('basket:changed', {
 			itemIds: this.itemIds,
 			total: this._total,
-			itemCount: this._items.size, // Используем размер Map
+			itemCount: this.itemCount,
 			isEmpty: this.isEmpty,
 		});
 	}
@@ -196,30 +143,31 @@ export class BasketModel {
 		return {
 			itemIds: this.itemIds,
 			total: this._total,
-			itemCount: this._items.size, // Используем размер Map
+			itemCount: this.itemCount,
 		};
 	}
 
 	/**
 	 * Восстанавливает состояние корзины из сохраненных данных
 	 * @param state - сохраненное состояние корзины
-	 * @param cards - массив актуальных карточек
+	 * @param getItemData - функция для получения данных товара по ID
 	 */
-	restore(state: Omit<BasketState, 'isEmpty'>, cards: ICard[]): void {
-		this._cards = new Map(cards.map((card) => [card.id, card]));
+	restore(
+		state: Omit<BasketState, 'isEmpty'>,
+		getItemData: (id: string) => { price: number; title: string } | undefined
+	): void {
 		this._items = new Map();
 
 		for (const id of state.itemIds) {
-			const card = this._cards.get(id);
-			if (card) {
-				this._items.set(id, card);
+			const itemData = getItemData(id);
+			if (itemData) {
+				this._items.set(id, { id, ...itemData });
 			} else {
-				console.warn(`Карточка с ID ${id} отсутствует в кэше`);
+				console.warn(`Данные для товара с ID ${id} не найдены`);
 			}
 		}
 
 		this._total = state.total;
-		this.updateTotal(false); // Явное обновление суммы
 		this.emitChange();
 	}
 }
